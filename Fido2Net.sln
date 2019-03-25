@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fido2Net", "Fido2Net\Fido2Net.csproj", "{2F9D2FE7-BE72-4D00-A89B-808D11538934}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2F9D2FE7-BE72-4D00-A89B-808D11538934}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F9D2FE7-BE72-4D00-A89B-808D11538934}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F9D2FE7-BE72-4D00-A89B-808D11538934}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F9D2FE7-BE72-4D00-A89B-808D11538934}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {463438B4-469E-4DE4-B726-747875A17E60}
+	EndGlobalSection
+EndGlobal
