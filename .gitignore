@@ -8,6 +8,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+libfido2
+Fido2Net/Native
 # User-specific files
 *.rsuser
 *.suo

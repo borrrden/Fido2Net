@@ -18,4 +18,13 @@
     <PackageReference Include="System.Memory" Version="4.5.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Native\crypto-44.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Native\fido2.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

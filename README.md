@@ -1,6 +1,6 @@
 # Fido2Net
 
-This is a set of .NET classes and bindings for wrapping the [libfido2](https://github.com/Yubico/libfido2) implementation.  You must supply a compiled version of the library for use.  Note that at the time of writing, there is not a good way to compile a shared library for Windows but for those interested I will explain how to add it.
+This is a set of .NET classes and bindings for wrapping the [libfido2](https://github.com/Yubico/libfido2) implementation.  You must first build the native dependencies via the provided script (currently Windows only):  build_deps.ps1.
 
 ## Main API
 
@@ -112,37 +112,3 @@ using (var list = new FidoDeviceInfoList(64)) {
     }
 }
 ```
-
-## FIDO2 shared library on Windows
-
-To compile the native library as a shared library for Windows, follow the instructions in the libfido2 repo up until building the libfido2 library itself.  At that point, modify the CMakeList.txt file in the `src` directory to remove the `if(NOT MSVC)` guard around the shared library target:
-
-```cmake
-if(NOT MSVC) # <---
-	add_library(fido2_shared SHARED ${FIDO_SOURCES} ${COMPAT_SOURCES})
-	# ...
-endif() # <---
-```
-
-After that you will need to export the symbol names.  An easy way to do this is to add the following near the top of `fido.h`
-
-```c
-#ifndef FIDO_PUBLIC_API
-#ifdef _MSC_VER
-#define FIDO_PUBLIC_API __declspec(dllexport)
-#else
-#define FIDO_PUBLIC_API
-#endif
-#endif
-```
-
-After that, simply add `FIBO_PUBLIC_API` to the beginning of every function in the header:
-
-```c
-FIDO_PUBLIC_API fido_assert_t *fido_assert_new(void);
-FIDO_PUBLIC_API fido_cred_t *fido_cred_new(void);
-FIDO_PUBLIC_API fido_dev_t *fido_dev_new(void);
-// etc, etc
-```
-
-And build with CMake as normal!  Then place the resulting fido_shared2.dll (renamed to fido2.dll) and crypto-44.dll in the output folder of your .NET app.
