@@ -16,7 +16,7 @@ namespace Fido2Net
         /// Default constructor
         /// </summary>
         /// <param name="err">The status code to use</param>
-        public CtapException(CtapStatus err) : base($"FIDO2 device returned non-success status ({err})")
+        public CtapException(CtapStatus err) : base($"CTAP response indicated non-success status ({err})")
         {
             Code = err;
         }
@@ -25,18 +25,18 @@ namespace Fido2Net
     /// <summary>
     /// An exception indicating that there was some problem with the FIDO2 device
     /// </summary>
-    public sealed class AuthenticatorException : Exception
+    public sealed class FidoException : Exception
     {
         /// <summary>
         /// The code returned from the device
         /// </summary>
-        public int Code { get; set; }
+        public FidoStatus Code { get; set; }
 
         /// <summary>
         /// Default constructor
         /// </summary>
         /// <param name="code">The code to use</param>
-        public AuthenticatorException(int code) : base($"FIDO2 device failed to perform operation ({code})")
+        public FidoException(FidoStatus code) : base($"FIDO2 operation failed ({code})")
         {
             Code = code;
         }

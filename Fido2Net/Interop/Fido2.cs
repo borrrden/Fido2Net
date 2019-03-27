@@ -125,7 +125,7 @@ namespace Fido2Net.Interop
     /// <summary>
     /// P/Invoke methods
     /// </summary>
-    public static unsafe class Native
+    public static unsafe partial class Native
     {
         private const string DllName = "fido2";
 

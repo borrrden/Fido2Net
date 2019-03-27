@@ -8,8 +8,8 @@
                 throw new CtapException((CtapStatus)err);
             }
 
-            if(err < (int)CtapStatus.Ok) {
-                throw new AuthenticatorException(err);
+            if(err < (int)FidoStatus.Ok) {
+                throw new FidoException((FidoStatus)err);
             }
         }
     }

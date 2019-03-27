@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -16,13 +16,16 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.2" />
+    <PackageReference Include="System.Security.Cryptography.Cng" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Native\crypto-44.dll">
+    <None Update="Native\fido2.dll">
+      <Link>fido2.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Native\fido2.dll">
+    <None Update="Native\crypto-44.dll">
+      <Link>crypto-44.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

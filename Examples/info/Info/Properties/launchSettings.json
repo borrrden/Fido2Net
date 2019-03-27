@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Info": {
+      "commandName": "Project",
+      "commandLineArgs": "\\\\?\\hid#vid_1050&pid_0407&mi_01#9&135e58be&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+    }
+  }
+}
