@@ -1,6 +1,6 @@
 # Fido2Net
 
-This is a set of .NET classes and bindings for wrapping the [libfido2](https://github.com/Yubico/libfido2) implementation.  You must first build the native dependencies via the provided script (currently Windows / macOS only):  build_deps.ps1 / build_deps_macos.sh.
+This is a set of .NET classes and bindings for wrapping the [libfido2](https://github.com/Yubico/libfido2) implementation.  You must first build the native dependencies via the provided script:  build_deps.ps1 / build_deps_macos.sh / build_deps_ubuntu.sh.  Other variants of Linux should examine the "apt-get" section of the script to determine what dependencies to install (libssl / libudev).
 
 ## Main API
 
