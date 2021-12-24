@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.NetCoreSdk" Version="1.9.0.1" />
-    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="2.3.3" />
+    <PackageReference Include="BouncyCastle.NetCoreSdk" Version="1.9.3.1" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

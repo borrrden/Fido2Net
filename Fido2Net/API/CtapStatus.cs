@@ -219,6 +219,12 @@
         /// </summary>
         UpRequired = 0x3b,
 
+        UvBlocked = 0x3c,
+
+        UvInvalid = 0x3f,
+
+        UnauthorizedPerm = 0x40,
+
         /// <summary>
         /// Other unspecified error.
         /// </summary>

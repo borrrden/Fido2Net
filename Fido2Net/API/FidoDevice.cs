@@ -172,6 +172,8 @@ namespace Fido2Net
         /// <exception cref="CtapException">Thrown if an error occurs while setting the pin</exception>
         public void SetPin(string oldPin, string pin) => Native.fido_dev_set_pin(_native, pin, oldPin).Check();
 
+        public void SetTimeout(TimeSpan timeout) => Native.fido_dev_set_timeout(_native, (int)timeout.TotalMilliseconds);
+
         #endregion
 
         #region Private Methods

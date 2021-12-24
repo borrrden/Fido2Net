@@ -1,4 +1,5 @@
-﻿using Fido2Net.Interop;
+﻿using Fido2Net.API;
+using Fido2Net.Interop;
 using Fido2Net.Util;
 
 using System;
@@ -10,6 +11,7 @@ namespace Fido2Net
     /// </summary>
     public unsafe ref struct FidoAssertionStatement
     {
+
         #region Properties
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace Fido2Net
 
         internal FidoAssertionStatement(fido_assert_t* native, int index)
         {
-            var idx = (IntPtr) index;
+            var idx = (UIntPtr) index;
             AuthData = new ReadOnlySpan<byte>(
                 Native.fido_assert_authdata_ptr(native, idx),
                 (int) Native.fido_assert_authdata_len(native, idx));
@@ -142,7 +144,7 @@ namespace Fido2Net
             set
             {
                 fixed (byte* value_ = value) {
-                    Native.fido_assert_set_clientdata_hash(_native, value_, (IntPtr) value.Length).Check();
+                    Native.fido_assert_set_clientdata_hash(_native, value_, (UIntPtr) value.Length).Check();
                 }
             }
         }
@@ -155,7 +157,7 @@ namespace Fido2Net
         public int Count
         {
             get => (int) Native.fido_assert_count(_native);
-            set => Native.fido_assert_set_count(_native, (IntPtr) value).Check();
+            set => Native.fido_assert_set_count(_native, (UIntPtr) value).Check();
         }
 
         /// <summary>
@@ -219,7 +221,7 @@ namespace Fido2Net
         public void AllowCredential(ReadOnlySpan<byte> credentialId)
         {
             fixed (byte* cred = credentialId) {
-                Native.fido_assert_allow_cred(_native, cred, (IntPtr) credentialId.Length).Check();
+                Native.fido_assert_allow_cred(_native, cred, (UIntPtr) credentialId.Length).Check();
             }
         }
 
@@ -232,7 +234,14 @@ namespace Fido2Net
         public void SetAuthData(ReadOnlySpan<byte> authData, int index)
         {
             fixed (byte* authData_ = authData) {
-                Native.fido_assert_set_authdata(_native, (IntPtr) index, authData_, (IntPtr) authData.Length).Check();
+                Native.fido_assert_set_authdata(_native, (UIntPtr) index, authData_, (UIntPtr) authData.Length).Check();
+            }
+        }
+
+        public void SetClientData(ReadOnlySpan<byte> clientData)
+        {
+            fixed (byte* clientData_ = clientData) {
+                Native.fido_assert_set_clientdata(_native, clientData_, (UIntPtr) clientData.Length).Check();
             }
         }
 
@@ -253,7 +262,7 @@ namespace Fido2Net
         public void SetHmacSalt(ReadOnlySpan<byte> salt, int index)
         {
             fixed (byte* salt_ = salt) {
-                Native.fido_assert_set_hmac_salt(_native, salt_, (IntPtr) salt.Length).Check();
+                Native.fido_assert_set_hmac_salt(_native, salt_, (UIntPtr) salt.Length).Check();
             }
         }
 
@@ -274,9 +283,13 @@ namespace Fido2Net
         public void SetSignature(ReadOnlySpan<byte> signature, int index)
         {
             fixed (byte* signature_ = signature) {
-                Native.fido_assert_set_sig(_native, (IntPtr) index, signature_, (IntPtr) signature.Length).Check();
+                Native.fido_assert_set_sig(_native, (UIntPtr) index, signature_, (UIntPtr) signature.Length).Check();
             }
         }
+
+        public void SetUserPresenceRequired(bool? required) => Native.fido_assert_set_up(_native, required.ToFidoOptional()).Check();
+
+        public void SetUserVerificationRequired(bool? required) => Native.fido_assert_set_uv(_native, required.ToFidoOptional()).Check();
 
         /// <summary>
         /// Verifies that the signature of the assertion statement at the given index matches
@@ -289,7 +302,7 @@ namespace Fido2Net
         public void Verify(int index, FidoCose algorithm, ReadOnlySpan<byte> pk)
         {
             fixed(void* pk_ = pk) { 
-                Native.fido_assert_verify(_native, (IntPtr) index, algorithm, pk_).Check();
+                Native.fido_assert_verify(_native, (UIntPtr) index, algorithm, pk_).Check();
             }
         }
 

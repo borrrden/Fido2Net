@@ -30,7 +30,7 @@ namespace Cred
     [HelpOption("-h|--help")]
     class Program
     {
-        private static readonly byte[] Cdh = {
+        private static readonly byte[] Cd = {
             0xf9, 0x64, 0x57, 0xe7, 0x2d, 0x97, 0xf6, 0xbb,
             0xdd, 0xd7, 0xfb, 0x06, 0x37, 0x62, 0xea, 0x26,
             0x20, 0x44, 0x8e, 0x69, 0x7c, 0x03, 0xf2, 0x31,
@@ -43,6 +43,9 @@ namespace Cred
             0xe7, 0xa4, 0x2b, 0x44, 0x89, 0x29, 0x39, 0xc5,
             0x56, 0x64, 0x01, 0x27, 0x0d, 0xbb, 0xc4, 0x49,
         };
+
+        [Option("-b|--blob-key", Description = "The key of the device stored blob to reference")]
+        public string BlobKey { get; set; }
 
         [Option("-i|--cred_id", Description = "The file to write the created credential ID to")]
         public string CredentialId { get; set; }
@@ -67,6 +70,9 @@ namespace Cred
         [Option("-r", Description = "Use resident keys when generating the credential (i.e. stored on the device)")]
         public bool ResidentKey { get; set; }
 
+        [Option("-T|--timeout", Description = "Device timeout in seconds")]
+        public int Timeout { get; set; }
+
         [Option("-t|--type", Description = "The key type to use when generating the credential")]
         public KeyType Type { get; set; } = KeyType.ECDSA;
 
@@ -81,7 +87,14 @@ namespace Cred
         private void OnExecute()
         {
             Fido2Settings.Flags = FidoFlags.Debug;
-            var ext = UseHmac ? FidoExtensions.HmacSecret : FidoExtensions.None;
+            var ext = FidoExtensions.None;
+            if(UseHmac) {
+                ext |= FidoExtensions.HmacSecret;
+            }
+
+            if(BlobKey != null) {
+                ext |= FidoExtensions.LargeBlobKey;
+            }
 
             using (var cred = new FidoCredential()) {
                 using (var dev = new FidoDevice()) {
@@ -96,7 +109,7 @@ namespace Cred
                     }
 
                     cred.SetType(FromKeyType(Type));
-                    cred.ClientDataHash = Cdh;
+                    cred.SetClientData(Cd);
                     cred.Rp = new FidoCredentialRp
                     {
                         Id = "localhost",
@@ -111,9 +124,25 @@ namespace Cred
                     });
 
                     cred.SetExtensions(ext);
-                    cred.SetOptions(ResidentKey, UserVerificationRequired);
+
+                    if(ResidentKey) {
+                        cred.SetResidentKeyRequired(true);
+                    }
+
+                    if(UserVerificationRequired) {
+                        cred.SetUserVerificationRequried(true);
+                    }
+
+                    if(Timeout > 0) {
+                        dev.SetTimeout(TimeSpan.FromSeconds(Timeout));
+                    }
+
                     dev.MakeCredential(cred, Pin);
                     dev.Close();
+                }
+
+                if(Pin != null) {
+                    UserVerificationRequired = true;
                 }
 
                 VerifyCred(cred.Format, cred.AuthData, cred.X5C, cred.Signature);
@@ -122,11 +151,18 @@ namespace Cred
 
         private void VerifyCred(string format, ReadOnlySpan<byte> authData, ReadOnlySpan<byte> x5C, ReadOnlySpan<byte> signature)
         {
-            var ext = UseHmac ? FidoExtensions.HmacSecret : FidoExtensions.None;
+            var ext = FidoExtensions.None;
+            if(UseHmac) {
+                ext |= FidoExtensions.HmacSecret;
+            }
+
+            if(BlobKey != null) {
+                ext |= FidoExtensions.LargeBlobKey;
+            }
 
             using (var cred = new FidoCredential()) {
                 cred.SetType(FromKeyType(Type));
-                cred.ClientDataHash = Cdh;
+                cred.SetClientData(Cd);
                 cred.Rp = new FidoCredentialRp
                 {
                     Id = "localhost",
@@ -135,7 +171,14 @@ namespace Cred
 
                 cred.AuthData = authData;
                 cred.SetExtensions(ext);
-                cred.SetOptions(ResidentKey, UserVerificationRequired);
+                if(ResidentKey) {
+                    cred.SetResidentKeyRequired(true);
+                }
+
+                if(UserVerificationRequired) {
+                    cred.SetUserVerificationRequried(true);
+                }
+
                 cred.SetX509(x5C);
                 cred.Signature = signature;
                 cred.Format = format;

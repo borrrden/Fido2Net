@@ -15,13 +15,14 @@ namespace Assert
     public enum KeyType
     {
         ECDSA,
-        RSA
+        RSA,
+        EDDSA
     }
 
     [HelpOption("-h|--help")]
     class Program
     {
-        private static readonly byte[] Cdh = {
+        private static readonly byte[] Cd = {
             0xec, 0x8d, 0x8f, 0x78, 0x42, 0x4a, 0x2b, 0xb7,
             0x82, 0x34, 0xaa, 0xca, 0x07, 0xa1, 0xf6, 0x56,
             0x42, 0x1c, 0xb6, 0xf6, 0xb3, 0x00, 0x86, 0x52,
@@ -29,6 +30,9 @@ namespace Assert
         };
 
         static void Main(string[] args) => CommandLineApplication.Execute<Program>(args);
+
+        [Option("-b|--blob-key", Description = "The key of the blob to use")]
+        public string BlobKey { get; set; }
 
         [FileExists]
         [Option("-a|--cred_id", Description = "The path to the file containing the credential ID as binary")]
@@ -56,6 +60,9 @@ namespace Assert
         [Argument(0, Description = "The file containing the public key bytes to use for the assertion")]
         public string PublicKey { get; set; }
 
+        [Option("-T|--timeout", Description = "The timeout (in seconds) to use when asserting")]
+        public int Timeout { get; set; }
+
         [Option("-t|--type", Description = "The type of public key to use in the assertion")]
         public KeyType Type { get; set; } = KeyType.ECDSA;
 
@@ -68,7 +75,13 @@ namespace Assert
         private void OnExecute()
         {
             Fido2Settings.Flags = FidoFlags.Debug;
-            var ext = HMACSalt != null ? FidoExtensions.HmacSecret : FidoExtensions.None;
+            var ext = FidoExtensions.None;
+            if (HMACSalt != null) {
+                ext |= FidoExtensions.HmacSecret;
+            }
+            if (BlobKey != null) {
+                ext |= FidoExtensions.LargeBlobKey;
+            }
 
             using (var assert = new FidoAssertion()) {
                 using (var dev = new FidoDevice()) {
@@ -77,21 +90,36 @@ namespace Assert
                         dev.ForceU2F();
                     }
 
+                    assert.SetClientData(Cd);
+                    assert.Rp = "localhost";
+                    assert.SetExtensions(ext);
+                    if (UserPresenceRequired) {
+                        assert.SetUserPresenceRequired(true);
+                    }
+
+                    if (UserVerificationRequired) {
+                        assert.SetUserVerificationRequired(true);
+                    }
+
+                    if (Timeout != 0) {
+                        dev.SetTimeout(TimeSpan.FromSeconds(Timeout));
+                    }
+
                     if (CredentialId != null) {
                         var credId = File.ReadAllBytes(CredentialId);
                         assert.AllowCredential(credId);
                     }
 
-                    assert.ClientDataHash = Cdh;
-                    assert.Rp = "localhost";
-                    assert.SetExtensions(ext);
-                    assert.SetOptions(UserPresenceRequired, UserVerificationRequired);
                     dev.GetAssert(assert, Pin);
                     dev.Close();
                 }
 
                 if (assert.Count != 1) {
                     throw new Exception($"{assert.Count} signatures required");
+                }
+
+                if (Pin != null) {
+                    UserVerificationRequired = true;
                 }
 
                 VerifyAssert(assert[0].AuthData, assert[0].Signature, ext);
@@ -104,8 +132,6 @@ namespace Assert
 
         private void VerifyAssert(ReadOnlySpan<byte> authData, ReadOnlySpan<byte> signature, FidoExtensions extensions)
         {
-            var ext = HMACSalt != null ? FidoExtensions.HmacSecret : FidoExtensions.None;
-
             byte[] keyBytes = null;
             using (var fin = new StreamReader(File.OpenRead(PublicKey))) {
                 var reader = new PemReader(fin);
@@ -113,28 +139,39 @@ namespace Assert
                     ECPublicKeyParameters parameters = (ECPublicKeyParameters)reader.ReadObject();
                     var x = parameters.Q.XCoord.ToBigInteger().ToByteArray();
                     var y = parameters.Q.YCoord.ToBigInteger().ToByteArray();
-                    keyBytes = new byte[x.Length + y.Length - 1];
-                    x.CopyTo(keyBytes, 0);
+                    keyBytes = new byte[64];
 
-                    // Why?  There seems to be an extra byte at the beginning
-                    Array.Copy(y, 1, keyBytes, x.Length, y.Length - 1);
-                } else {
-                    RsaKeyParameters parameters = (RsaKeyParameters) reader.ReadObject();
+                    // Why?  There seems to be an extra byte at the beginning sometimes
+                    Array.Copy(x, x.Length - 32, keyBytes, 0, 32);
+                    Array.Copy(y, y.Length - 32, keyBytes, 32, 32);
+                } else if (Type == KeyType.RSA) {
+                    RsaKeyParameters parameters = (RsaKeyParameters)reader.ReadObject();
                     var mod = parameters.Modulus.ToByteArray();
                     var e = parameters.Exponent.ToByteArray();
                     keyBytes = new byte[mod.Length + e.Length];
                     mod.CopyTo(keyBytes, 0);
                     e.CopyTo(keyBytes, mod.Length);
+                } else if (Type == KeyType.EDDSA) {
+                    throw new NotSupportedException("Original example includes this but not sure why, it doesn't seem supported");
+                } else {
+                    throw new NotSupportedException("Unsupported key type");
                 }
             }
 
             using (var assert = new FidoAssertion()) {
-                assert.ClientDataHash = Cdh;
+                assert.SetClientData(Cd);
                 assert.Rp = "localhost";
                 assert.Count = 1;
                 assert.SetAuthData(authData, 0);
-                assert.SetExtensions(ext);
-                assert.SetOptions(UserPresenceRequired, UserVerificationRequired);
+                assert.SetExtensions(extensions);
+                if(UserPresenceRequired) {
+                    assert.SetUserPresenceRequired(true);
+                }
+
+                if(UserVerificationRequired) {
+                    assert.SetUserVerificationRequired(true);
+                }
+
                 assert.SetSignature(signature, 0);
                 assert.Verify(0, FromKeyType(Type), keyBytes);
             }
@@ -147,6 +184,8 @@ namespace Assert
                     return FidoCose.ES256;
                 case KeyType.RSA:
                     return FidoCose.RS256;
+                case KeyType.EDDSA:
+                    return FidoCose.EDDSA;
                 default:
                     throw new InvalidOperationException("Unrecognized key type");
             }

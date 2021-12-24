@@ -23,7 +23,7 @@ namespace Fido2Net.Interop
     /// <param name="size">The size of the passed buffer</param>
     /// <param name="wait">The number of millisecond to wait before giving up (-1 for infinite)</param>
     /// <returns>The number of bytes read, or -1 on error</returns>
-    public unsafe delegate int fido_dev_io_read_t(void* device, byte* buffer, IntPtr size, int wait);
+    public unsafe delegate int fido_dev_io_read_t(void* device, byte* buffer, UIntPtr size, int wait);
 
     /// <summary>
     /// The signature of a callback for writing to a FIDO2 device
@@ -32,7 +32,7 @@ namespace Fido2Net.Interop
     /// <param name="buffer">The buffer to write</param>
     /// <param name="size">The size of the buffer to write</param>
     /// <returns>The number of bytes written, or -1 on error</returns>
-    public unsafe delegate int fido_dev_io_write_t(void* device, byte* buffer, IntPtr size);
+    public unsafe delegate int fido_dev_io_write_t(void* device, byte* buffer, UIntPtr size);
 
     /// <summary>
     /// FIDO assertion handle
@@ -72,6 +72,24 @@ namespace Fido2Net.Interop
     public struct fido_cbor_info_t
     {
 
+    }
+
+    public enum fido_opt_t 
+    {
+        /// <summary>
+        /// Use authenticator's default
+        /// </summary>
+        FIDO_OPT_OMIT = 0,
+
+        /// <summary>
+        /// Explicitly set option to false
+        /// </summary>
+        FIDO_OPT_FALSE = 1,
+
+        /// <summary>
+        /// Explicitly set option to true
+        /// </summary>
+        FIDO_OPT_TRUE = 2
     }
 
     /// <summary>
@@ -121,6 +139,11 @@ namespace Fido2Net.Interop
             set => _write = Marshal.GetFunctionPointerForDelegate(value);
         }
     }
+    
+    public struct fido_log_handler_t
+    {
+
+    }
 
     /// <summary>
     /// P/Invoke methods
@@ -159,7 +182,7 @@ namespace Fido2Net.Interop
         /// </summary>
         /// <returns>A newly allocated, empty fido_dev_info_t type</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern fido_dev_info_t *fido_dev_info_new(IntPtr n);
+        public static extern fido_dev_info_t *fido_dev_info_new(UIntPtr n);
 
         /// <summary>
         /// Returns a pointer to a newly allocated, empty fido_cbor_info_t type. 
@@ -216,13 +239,13 @@ namespace Fido2Net.Interop
 		public static extern void fido_dev_free(fido_dev_t **dev_p);
 
         /// <summary>
-        /// Releases the memory backing *devlist_p, where *devlist_p must have been previously allocated by <see cref="fido_dev_info_new(IntPtr)"/>. 
+        /// Releases the memory backing *devlist_p, where *devlist_p must have been previously allocated by <see cref="fido_dev_info_new(UIntPtr)"/>. 
         /// On return, *devlist_p is set to <c>null</c>. Either devlist_p or *devlist_p may be <c>null</c>, in which case fido_dev_info_free() is a NOP.
         /// </summary>
         /// <param name="devlist_p"></param>
         /// <param name="n">The number of entries this object was allocated to hold</param>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void fido_dev_info_free(fido_dev_info_t **devlist_p, IntPtr n);
+		public static extern void fido_dev_info_free(fido_dev_info_t **devlist_p, UIntPtr n);
 
         /// <summary>
         /// The fido_init() function initialises the libfido2 library. 
@@ -235,6 +258,9 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern void fido_init(int flags);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void fido_set_log_handler(fido_log_handler_t log_handler);
+
         /// <summary>
         /// Returns a pointer to the authenticator data of statement idx in assert
         /// </summary>
@@ -242,7 +268,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>A pointer to the authenticator data of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern byte *fido_assert_authdata_ptr(fido_assert_t *assert, IntPtr idx);
+		public static extern byte *fido_assert_authdata_ptr(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the client data hash of assert
@@ -259,7 +285,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>A pointer to hmac-secret of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern byte *fido_assert_hmac_secret_ptr(fido_assert_t *assert, IntPtr idx);
+		public static extern byte *fido_assert_hmac_secret_ptr(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the ID of statement idx in assert
@@ -268,7 +294,10 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>A pointer to the ID of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern byte *fido_assert_id_ptr(fido_assert_t *assert, IntPtr idx);
+		public static extern byte *fido_assert_id_ptr(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte* fido_assert_largeblob_key_ptr(fido_assert_t*assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the signature of statement idx in assert
@@ -277,7 +306,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>A pointer to the signatureof statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern byte *fido_assert_sig_ptr(fido_assert_t *assert, IntPtr idx);
+		public static extern byte *fido_assert_sig_ptr(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the user ID of statement idx in assert
@@ -286,7 +315,10 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>A pointer to the user ID of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern byte *fido_assert_user_id_ptr(fido_assert_t *assert, IntPtr idx);
+		public static extern byte *fido_assert_user_id_ptr(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte* fido_assert_blob_ptr(fido_assert_t* assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the extensions of ci
@@ -303,6 +335,9 @@ namespace Fido2Net.Interop
         /// <returns>A pointer to the options dictionary names of ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern byte **fido_cbor_info_options_name_ptr(fido_cbor_info_t *ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte** fido_cbor_info_transports_ptr(fido_cbor_info_t* ci);
 
         /// <summary>
         /// Returns a pointer to the versions of ci
@@ -337,7 +372,7 @@ namespace Fido2Net.Interop
         /// <returns>A pointer to the relying party of assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(ConstStringMarshaler))]
-		public static extern string fido_assert_user_display_name(fido_assert_t *assert, IntPtr idx);
+		public static extern string fido_assert_user_display_name(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the user icon of statement idx in assert
@@ -347,7 +382,7 @@ namespace Fido2Net.Interop
         /// <returns>A pointer to the user icon of assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(ConstStringMarshaler))]
-		public static extern string fido_assert_user_icon(fido_assert_t *assert, IntPtr idx);
+		public static extern string fido_assert_user_icon(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the user name of statement idx in assert
@@ -357,7 +392,11 @@ namespace Fido2Net.Interop
         /// <returns>A pointer to the user name of assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(ConstStringMarshaler))]
-		public static extern string fido_assert_user_name(fido_assert_t *assert, IntPtr idx);
+		public static extern string fido_assert_user_name(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(ConstStringMarshaler))]
+        public static extern string fido_cbor_info_algorithm_type(fido_cbor_info_t* ci, UIntPtr index);
 
         /// <summary>
         /// Returns a pointer to the format of cred
@@ -420,7 +459,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index of the object to retrieve</param>
         /// <returns>A pointer to the idx entry of di</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern fido_dev_info_t *fido_dev_info_ptr(fido_dev_info_t *di, IntPtr idx);
+		public static extern fido_dev_info_t *fido_dev_info_ptr(fido_dev_info_t *di, UIntPtr idx);
 
         /// <summary>
         /// Returns a pointer to the protocols of ci
@@ -438,6 +477,12 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern byte *fido_cbor_info_aaguid_ptr(fido_cbor_info_t *ci);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte* fido_cred_aaguid_ptr(fido_cred_t* cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte *fido_cred_attstmt_ptr(fido_cred_t* cred);
+
         /// <summary>
         /// Returns a pointer to the authenticator data of cred
         /// </summary>
@@ -445,6 +490,9 @@ namespace Fido2Net.Interop
         /// <returns>A pointer to the authenticator data of cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern byte *fido_cred_authdata_ptr(fido_cred_t *cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern byte* fido_cred_authdata_raw_ptr(fido_cred_t* cred);
 
         /// <summary>
         /// Returns a pointer to the client data hash of cred
@@ -496,7 +544,7 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data inside of <paramref name="ptr"/></param>
         /// <returns></returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int fido_assert_allow_cred(fido_assert_t* assert, byte* ptr, IntPtr len);
+        public static extern int fido_assert_allow_cred(fido_assert_t* assert, byte* ptr, UIntPtr len);
 
         /// <summary>
         /// Set the authenticator data of statement idx in assert
@@ -507,8 +555,19 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data in <paramref name="ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_assert_set_authdata(fido_assert_t *assert, IntPtr idx, byte *ptr,
-    IntPtr len);
+		public static extern int fido_assert_set_authdata(fido_assert_t *assert, UIntPtr idx, byte *ptr,
+    UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_assert_set_authdata_raw(fido_assert_t* assert, UIntPtr idx, byte* ptr,
+    UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_blob(fido_cred_t* cred, byte* blob, UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_assert_set_clientdata(fido_assert_t* assert, byte* data,
+            UIntPtr len);
 
         /// <summary>
         /// Set the client data hash of assert
@@ -519,7 +578,7 @@ namespace Fido2Net.Interop
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_assert_set_clientdata_hash(fido_assert_t *assert, byte *ptr,
-    IntPtr len);
+    UIntPtr len);
 
         /// <summary>
         /// Sets the number of assertion statements contained in assert
@@ -528,7 +587,7 @@ namespace Fido2Net.Interop
         /// <param name="n">The new number of assertion statements</param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_assert_set_count(fido_assert_t *assert, IntPtr n);
+		public static extern int fido_assert_set_count(fido_assert_t *assert, UIntPtr n);
 
         /// <summary>
         /// Sets the extensions of assert
@@ -547,7 +606,11 @@ namespace Fido2Net.Interop
         /// <param name="salt_len">The length of the data in <paramref name="salt"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_assert_set_hmac_salt(fido_assert_t *assert, byte *salt, IntPtr salt_len);
+		public static extern int fido_assert_set_hmac_salt(fido_assert_t *assert, byte *salt, UIntPtr salt_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_assert_set_hmac_secret(fido_assert_t* assert, UIntPtr idx,
+            byte* secret, UIntPtr secret_len);
 
         /// <summary>
         /// Sets the options of assert
@@ -569,6 +632,12 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_assert_set_rp(fido_assert_t *assert, string id);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_assert_set_up(fido_assert_t* assert, fido_opt_t val);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_assert_set_uv(fido_assert_t* assert, fido_opt_t val);
+
         /// <summary>
         /// Set the client data hash of statement idx in assert
         /// </summary>
@@ -578,7 +647,7 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data in <paramref name="ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_assert_set_sig(fido_assert_t *assert, IntPtr idx, byte *ptr, IntPtr len);
+		public static extern int fido_assert_set_sig(fido_assert_t *assert, UIntPtr idx, byte *ptr, UIntPtr len);
 
         /// <summary>
         /// Verifies whether the client data hash, relying party ID, user presence and user verification attributes 
@@ -592,7 +661,10 @@ namespace Fido2Net.Interop
         /// <param name="pk">The public key to use during verification</param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_assert_verify(fido_assert_t *assert, IntPtr idx, FidoCose cose_alg, void *pk);
+		public static extern int fido_assert_verify(fido_assert_t *assert, UIntPtr idx, FidoCose cose_alg, void *pk);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cbor_info_algorithm_cose(fido_cbor_info_t* ci, UIntPtr index);
 
         /// <summary>
         /// Adds ptr to the list of credentials excluded by cred, where ptr points to a credential ID of len bytes. 
@@ -604,7 +676,13 @@ namespace Fido2Net.Interop
         /// <param name="id_len">The length of the data in <paramref name="id_ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_exclude(fido_cred_t *cred, byte *id_ptr, IntPtr id_len);
+		public static extern int fido_cred_exclude(fido_cred_t *cred, byte *id_ptr, UIntPtr id_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_prot(fido_cred_t* cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_attstmt(fido_cred_t* cred, byte* ptr, UIntPtr len);
 
         /// <summary>
         /// Sets the authenticator data of cred
@@ -614,7 +692,13 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data in <paramref name="ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_set_authdata(fido_cred_t *cred, byte *ptr, IntPtr len);
+		public static extern int fido_cred_set_authdata(fido_cred_t *cred, byte *ptr, UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_authdata_raw(fido_cred_t* cred, byte* ptr, UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_clientdata(fido_cred_t* cred, byte* ptr, UIntPtr len);
 
         /// <summary>
         /// Sets the client data hash of cred
@@ -624,7 +708,7 @@ namespace Fido2Net.Interop
         /// <param name="hash_len">The length of the data in <paramref name="hash"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_set_clientdata_hash(fido_cred_t *cred, byte *hash, IntPtr hash_len);
+		public static extern int fido_cred_set_clientdata_hash(fido_cred_t *cred, byte *hash, UIntPtr hash_len);
 
         /// <summary>
         /// Sets the extensions of cred
@@ -644,6 +728,9 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_cred_set_fmt(fido_cred_t *cred, string fmt);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_id(fido_cred_t* cred, byte* ptr, UIntPtr len);
+
         /// <summary>
         /// Sets the options of cred
         /// </summary>
@@ -654,6 +741,15 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_cred_set_options(fido_cred_t *cred, [MarshalAs(UnmanagedType.U1)]bool rk, 
             [MarshalAs(UnmanagedType.U1)]bool uv);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_pin_minlen(fido_cred_t* cred, UIntPtr len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_prot(fido_cred_t* cred, int prot);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_rk(fido_cred_t* cred, fido_opt_t val);
 
         /// <summary>
         /// Sets the relying party name of cred
@@ -673,7 +769,7 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data in <paramref name="ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_set_sig(fido_cred_t *cred, byte *ptr, IntPtr len);
+		public static extern int fido_cred_set_sig(fido_cred_t *cred, byte *ptr, UIntPtr len);
 
         /// <summary>
         /// Sets the algorithm type of cred
@@ -683,6 +779,9 @@ namespace Fido2Net.Interop
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_cred_set_type(fido_cred_t *cred, FidoCose cose_alg);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_cred_set_uv(fido_cred_t* cred, fido_opt_t val);
 
         /// <summary>
         /// Sets the user data of cred
@@ -695,7 +794,7 @@ namespace Fido2Net.Interop
         /// <param name="icon">The user icon identifier (e.g. url)</param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_set_user(fido_cred_t *cred, byte *user_id, IntPtr user_id_len,
+		public static extern int fido_cred_set_user(fido_cred_t *cred, byte *user_id, UIntPtr user_id_len,
     string name, string display_name, string icon);
 
         /// <summary>
@@ -706,7 +805,7 @@ namespace Fido2Net.Interop
         /// <param name="len">The length of the data in <paramref name="ptr"/></param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_cred_set_x509(fido_cred_t *cred, byte *ptr, IntPtr len);
+		public static extern int fido_cred_set_x509(fido_cred_t *cred, byte *ptr, UIntPtr len);
 
         /// <summary>
         /// Verifies whether the client data hash, relying party ID, credential ID, type, and resident key and user verification attributes 
@@ -717,6 +816,9 @@ namespace Fido2Net.Interop
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_cred_verify(fido_cred_t *cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_cancel(fido_dev_t* device);
 
         /// <summary>
         /// Closes the device represented by dev. If dev is already closed, this is a NOP.
@@ -734,9 +836,9 @@ namespace Fido2Net.Interop
         /// user presence and user verification attributes.
         /// <para>See fido_assert_set(3) for information on how these values are set.</para>
         /// <para>If a PIN is not needed to authenticate the request against dev, then pin may be NULL.  Otherwise pin must point to a NUL-terminated UTF-8 string.</para>
-        /// <para>After a successful call, the <see cref="fido_assert_count(fido_assert_t*)"/>, <see cref="fido_assert_user_display_name(fido_assert_t*, IntPtr)"/>, 
-        /// <see cref="fido_assert_user_icon(fido_assert_t*, IntPtr)"/>, <see cref="fido_assert_user_name(fido_assert_t*, IntPtr)"/>, 
-        /// <see cref="fido_assert_authdata_ptr(fido_assert_t*, IntPtr)"/>, <see cref="fido_assert_user_id_ptr(fido_assert_t*, IntPtr)"/>, and <see cref="fido_assert_sig_ptr(fido_assert_t*, IntPtr)"/> 
+        /// <para>After a successful call, the <see cref="fido_assert_count(fido_assert_t*)"/>, <see cref="fido_assert_user_display_name(fido_assert_t*, UIntPtr)"/>, 
+        /// <see cref="fido_assert_user_icon(fido_assert_t*, UIntPtr)"/>, <see cref="fido_assert_user_name(fido_assert_t*, UIntPtr)"/>, 
+        /// <see cref="fido_assert_authdata_ptr(fido_assert_t*, UIntPtr)"/>, <see cref="fido_assert_user_id_ptr(fido_assert_t*, UIntPtr)"/>, and <see cref="fido_assert_sig_ptr(fido_assert_t*, UIntPtr)"/> 
         /// functions may be invoked on assert to retrieve the various attributes of the generated assertion.</para>
         /// <para>Please note that fido_dev_get_assert() is synchronous and will block if necessary.</para>
         /// </summary>
@@ -765,6 +867,15 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_dev_get_retry_count(fido_dev_t *dev, int *retries);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_get_uv_retry_count(fido_dev_t* device, int* retries);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_get_touch_begin(fido_dev_t* device);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_get_touch_status(fido_dev_t* device);
+
         /// <summary>
         /// Fills devlist with up to ilen FIDO devices found by the underlying operating system. 
         /// Currently only USB HID devices are supported. 
@@ -775,7 +886,7 @@ namespace Fido2Net.Interop
         /// <param name="olen">A pointer to where the number of entries that were written will be stored</param>
         /// <returns><see cref="CtapStatus.Ok"/> on success, anything else on failure</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int fido_dev_info_manifest(fido_dev_info_t *devlist, IntPtr ilen, IntPtr *olen);
+		public static extern int fido_dev_info_manifest(fido_dev_info_t *devlist, UIntPtr ilen, UIntPtr *olen);
 
         /// <summary>
         /// <para>Asks the FIDO device represented by dev to generate a new credential according to the following parameters defined in cred:</para>
@@ -837,6 +948,9 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern int fido_dev_set_pin(fido_dev_t *dev, string pin, string oldpin);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_set_timeout(fido_dev_t* device, int timeout);
+
         /// <summary>
         /// Returns the length of the authenticator data of statement idx in assert
         /// </summary>
@@ -844,7 +958,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>The length of the authenticator data of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_authdata_len(fido_assert_t *assert, IntPtr idx);
+		public static extern UIntPtr fido_assert_authdata_len(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns the length of the client data hash of assert
@@ -852,7 +966,7 @@ namespace Fido2Net.Interop
         /// <param name="assert">The assertion object to act on</param>
         /// <returns>The length of the client data hash of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_clientdata_hash_len(fido_assert_t *assert);
+		public static extern UIntPtr fido_assert_clientdata_hash_len(fido_assert_t *assert);
 
         /// <summary>
         /// Gets the number of statements in this assertion
@@ -860,7 +974,7 @@ namespace Fido2Net.Interop
         /// <param name="assert">The assert to act on</param>
         /// <returns>The number of statements in this assertion</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_count(fido_assert_t *assert);
+		public static extern UIntPtr fido_assert_count(fido_assert_t *assert);
 
         /// <summary>
         /// Returns the length of the hmac-secret of statement idx in assert
@@ -869,7 +983,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>The length of the hmac-secret of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_hmac_secret_len(fido_assert_t *assert, IntPtr idx);
+		public static extern UIntPtr fido_assert_hmac_secret_len(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns the length of the ID of statement idx in assert
@@ -878,7 +992,10 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>The length of the ID of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_id_len(fido_assert_t *assert, IntPtr idx);
+		public static extern UIntPtr fido_assert_id_len(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_assert_largeblob_key_len(fido_assert_t* assert, UIntPtr idx);
 
         /// <summary>
         /// Returns the length of the signature of statement idx in assert
@@ -887,7 +1004,7 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>The length of the signature of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_sig_len(fido_assert_t *assert, IntPtr idx);
+		public static extern UIntPtr fido_assert_sig_len(fido_assert_t *assert, UIntPtr idx);
 
         /// <summary>
         /// Returns the length of the user ID of statement idx in assert
@@ -896,7 +1013,10 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index to retrieve</param>
         /// <returns>The length of the user ID of statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_assert_user_id_len(fido_assert_t *assert, IntPtr idx);
+		public static extern UIntPtr fido_assert_user_id_len(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_assert_blob_len(fido_assert_t* assert, UIntPtr idx);
 
         /// <summary>
         /// Returns the length of the AAGUID in ci
@@ -904,7 +1024,10 @@ namespace Fido2Net.Interop
         /// <param name="ci">The object to act on</param>
         /// <returns>The length of the AAGUID in ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cbor_info_aaguid_len(fido_cbor_info_t *ci);
+		public static extern UIntPtr fido_cbor_info_aaguid_len(fido_cbor_info_t *ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cbor_info_algorithm_count(fido_cbor_info_t *ci);
 
         /// <summary>
         /// Returns the length of the extensions in ci
@@ -912,7 +1035,7 @@ namespace Fido2Net.Interop
         /// <param name="ci">The object to act on</param>
         /// <returns>The length of the extensions in ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cbor_info_extensions_len(fido_cbor_info_t *ci);
+		public static extern UIntPtr fido_cbor_info_extensions_len(fido_cbor_info_t *ci);
 
         /// <summary>
         /// Returns the length of the options in ci
@@ -920,7 +1043,7 @@ namespace Fido2Net.Interop
         /// <param name="ci">The object to act on</param>
         /// <returns>The length of the options in ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cbor_info_options_len(fido_cbor_info_t *ci);
+		public static extern UIntPtr fido_cbor_info_options_len(fido_cbor_info_t *ci);
 
         /// <summary>
         /// Returns the length of the protocols in ci
@@ -928,7 +1051,10 @@ namespace Fido2Net.Interop
         /// <param name="ci">The object to act on</param>
         /// <returns>The length of the protocols in ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cbor_info_protocols_len(fido_cbor_info_t *ci);
+		public static extern UIntPtr fido_cbor_info_protocols_len(fido_cbor_info_t *ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cbor_info_transports_len(fido_cbor_info_t* ci);
 
         /// <summary>
         /// Returns the length of the versions in ci
@@ -936,7 +1062,13 @@ namespace Fido2Net.Interop
         /// <param name="ci">The object to act on</param>
         /// <returns>The length of the versions in ci</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cbor_info_versions_len(fido_cbor_info_t *ci);
+		public static extern UIntPtr fido_cbor_info_versions_len(fido_cbor_info_t *ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cred_aaguid_len(fido_cred_t* cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cred_attstmt_len(fido_cred_t *cred);
 
         /// <summary>
         /// Returns the length of the authenticator data in cred
@@ -944,7 +1076,10 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the authenticator data in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_authdata_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_authdata_len(fido_cred_t *cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cred_authdata_raw_len(fido_cred_t* cred);
 
         /// <summary>
         /// Returns the length of the client data hash in cred
@@ -952,7 +1087,7 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the client data hash in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_clientdata_hash_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_clientdata_hash_len(fido_cred_t *cred);
 
         /// <summary>
         /// Returns the length of the ID in cred
@@ -960,7 +1095,10 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the ID in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_id_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_id_len(fido_cred_t *cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern UIntPtr fido_cred_pin_minlen(fido_cred_t* cred);
 
         /// <summary>
         /// Returns the length of the public key in cred
@@ -968,7 +1106,7 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the public key in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_pubkey_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_pubkey_len(fido_cred_t *cred);
 
         /// <summary>
         /// Returns the length of the signature in cred
@@ -976,7 +1114,7 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the signature in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_sig_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_sig_len(fido_cred_t *cred);
 
         /// <summary>
         /// Returns the length of the attestation certificate in cred
@@ -984,7 +1122,7 @@ namespace Fido2Net.Interop
         /// <param name="cred">The object to act on</param>
         /// <returns>The length of the attestation certificate in cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr fido_cred_x5c_len(fido_cred_t *cred);
+		public static extern UIntPtr fido_cred_x5c_len(fido_cred_t *cred);
 
         /// <summary>
         /// Gets the flags that are set on statement idx in assert
@@ -993,7 +1131,10 @@ namespace Fido2Net.Interop
         /// <param name="idx">The index of the statement to read</param>
         /// <returns>The flags that are set on statement idx in assert</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern FidoAuthFlags fido_assert_flags(fido_assert_t *assert, IntPtr idx);
+		public static extern FidoAuthFlags fido_assert_flags(fido_assert_t *assert, UIntPtr idx);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint fido_assert_sigcount(fido_assert_t* assert, UIntPtr index);
 
         /// <summary>
         /// Returns the flags that are set on cred
@@ -1002,6 +1143,9 @@ namespace Fido2Net.Interop
         /// <returns>The flags that are set on cred</returns>
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern FidoAuthFlags fido_cred_flags(fido_cred_t *cred);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint fido_cred_sigcount(fido_cred_t* cred);
 
         /// <summary>
         /// Returns the protocol of the device
@@ -1067,6 +1211,26 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
 		public static extern ulong fido_cbor_info_maxmsgsiz(fido_cbor_info_t *ci);
 
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong fido_cbor_info_maxcredbloblen(fido_cbor_info_t* ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong fido_cbor_info_maxcredcntlist(fido_cbor_info_t* ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong fido_cbor_info_maxcredidlen(fido_cbor_info_t* ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong fido_cbor_info_fwversion(fido_cbor_info_t* ci);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_has_pin(fido_dev_t* dev);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_has_uv(fido_dev_t* device);
+
         /// <summary>
         /// Returns if device is capable of FIDO2
         /// </summary>
@@ -1075,5 +1239,45 @@ namespace Fido2Net.Interop
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.U1)]
 		public static extern bool fido_dev_is_fido2(fido_dev_t *dev);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_is_winhello(fido_dev_t* dev);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_supports_pin(fido_dev_t* device);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_supports_cred_prot(fido_dev_t* device);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_supports_credman(fido_dev_t* device);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool fido_dev_supports_uv(fido_dev_t* device);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_largeblob_get(fido_dev_t* device, byte* key_ptr,
+            UIntPtr key_len, byte** blob_ptr, UIntPtr* blob_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_largeblob_get_array(fido_dev_t* device, byte** cbor_ptr,
+            UIntPtr* cbor_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_largeblob_remove(fido_dev_t* device, byte* key_ptr,
+            UIntPtr key_len, string pin);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_largeblob_set(fido_dev_t* device, byte* key_ptr,
+            UIntPtr key_len, byte* blob_ptr, UIntPtr blob_len);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int fido_dev_largeblob_set_array(fido_dev_t* device, byte* cbor_ptr,
+            UIntPtr cbor_len, string pin);
     }
 }

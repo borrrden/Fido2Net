@@ -1,4 +1,5 @@
-﻿using Fido2Net.Interop;
+﻿using Fido2Net.API;
+using Fido2Net.Interop;
 using Fido2Net.Util;
 using System;
 
@@ -76,7 +77,7 @@ namespace Fido2Net
             set
             {
                 fixed (byte* value_ = value) {
-                    Native.fido_cred_set_authdata(_native, value_, (IntPtr) value.Length).Check();
+                    Native.fido_cred_set_authdata(_native, value_, (UIntPtr) value.Length).Check();
                 }
             }
         }
@@ -97,7 +98,7 @@ namespace Fido2Net
             set
             {
                 fixed (byte* value_ = value) {
-                    Native.fido_cred_set_clientdata_hash(_native, value_, (IntPtr) value.Length).Check();
+                    Native.fido_cred_set_clientdata_hash(_native, value_, (UIntPtr) value.Length).Check();
                 }
             }
         }
@@ -173,7 +174,7 @@ namespace Fido2Net
             set
             {
                 fixed (byte* value_ = value) {
-                    Native.fido_cred_set_sig(_native, value_, (IntPtr) value.Length).Check();
+                    Native.fido_cred_set_sig(_native, value_, (UIntPtr) value.Length).Check();
                 }
             }
         }
@@ -242,7 +243,14 @@ namespace Fido2Net
         public void Exclude(ReadOnlySpan<byte> id)
         {
             fixed (byte* body_ = id) {
-                Native.fido_cred_exclude(_native, body_, (IntPtr) id.Length).Check();
+                Native.fido_cred_exclude(_native, body_, (UIntPtr) id.Length).Check();
+            }
+        }
+
+        public void SetClientData(ReadOnlySpan<byte> data)
+        {
+            fixed(byte* data_ = data) {
+                Native.fido_cred_set_clientdata(_native, data_, (UIntPtr)data.Length);
             }
         }
 
@@ -261,6 +269,8 @@ namespace Fido2Net
         /// <exception cref="CtapException">Thrown if an error occurs while setting the options</exception>
         public void SetOptions(bool residentKey, bool verifyUser) => Native.fido_cred_set_options(_native, residentKey, verifyUser).Check();
 
+        public void SetResidentKeyRequired(bool? required) => Native.fido_cred_set_rk(_native, required.ToFidoOptional());
+
         /// <summary>
         /// Sets the algorithm to use when signing using this credential
         /// </summary>
@@ -276,10 +286,12 @@ namespace Fido2Net
         public void SetUser(FidoCredentialUser user)
         {
             fixed (byte* id_ = user.Id) {
-                Native.fido_cred_set_user(_native, id_, (IntPtr) user.Id.Length, user.Name,
+                Native.fido_cred_set_user(_native, id_, (UIntPtr) user.Id.Length, user.Name,
                     user.DisplayName, user.Icon).Check();
             }
         }
+
+        public void SetUserVerificationRequried(bool? required) => Native.fido_cred_set_uv(_native, required.ToFidoOptional());
 
         /// <summary>
         /// Sets the X509 certificate to use for attestation purposes
@@ -289,7 +301,7 @@ namespace Fido2Net
         public void SetX509(ReadOnlySpan<byte> x509)
         {
             fixed (byte* x509_ = x509) {
-                Native.fido_cred_set_x509(_native, x509_, (IntPtr) x509.Length).Check();
+                Native.fido_cred_set_x509(_native, x509_, (UIntPtr) x509.Length).Check();
             }
         }
 

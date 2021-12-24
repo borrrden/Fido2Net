@@ -81,7 +81,7 @@ namespace Fido2Net
         {
             get
             {
-                var di = Native.fido_dev_info_ptr(_native, (IntPtr) _index);
+                var di = Native.fido_dev_info_ptr(_native, (UIntPtr) _index);
                 return new FidoDeviceInfo(
                     Native.fido_dev_info_path(di),
                     Native.fido_dev_info_vendor(di),
@@ -139,7 +139,7 @@ namespace Fido2Net
     {
         #region Variables
 
-        private IntPtr _capacity;
+        private UIntPtr _capacity;
         private int _count;
         private fido_dev_info_t* _native;
 
@@ -160,13 +160,13 @@ namespace Fido2Net
         /// <exception cref="CtapException">Thrown if an error occurs while enumerating the devices</exception>
         public FidoDeviceInfoList(int capacity)
         {
-            _capacity = (IntPtr) capacity;
+            _capacity = (UIntPtr) capacity;
             _native = Native.fido_dev_info_new(_capacity);
             if (_native == null) {
                 throw new OutOfMemoryException();
             }
 
-            var olen = IntPtr.Zero;
+            var olen = UIntPtr.Zero;
             Native.fido_dev_info_manifest(_native, _capacity, &olen).Check();
             _count = (int) olen;
         }

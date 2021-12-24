@@ -6,14 +6,14 @@ which brew > /dev/null || (echo "homebrew not found; aborting..."; exit 1)
 
 pushd `dirname $0`
 if [[ ! -d libfido2 ]]; then
-    git clone https://github.com/yubico/libfido2
+    git clone https://github.com/yubico/libfido2 --branch 1.9.0
 fi
 
 mkdir -p libfido2/build
 pushd libfido2/build
 
 if [[ ! -d libcbor ]]; then
-    git clone https://github.com/pjk/libcbor --branch v0.5.0
+    git clone https://github.com/pjk/libcbor --branch v0.8.0
 fi
 
 mkdir -p libcbor/build
